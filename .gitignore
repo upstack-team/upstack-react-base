@@ -1,0 +1,11 @@
+# Les dossiers de téléchargement lourds (ne jamais envoyer !)
+node_modules/
+
+# Les fichiers de construction de Next.js
+.next/
+
+# Ton fichier secret (celui avec ton mot de passe Postgres)
+.env
+
+# Ta base de données locale si tu es sur SQLite
+*.db

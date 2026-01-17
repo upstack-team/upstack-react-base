@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  hashedPassword String
+  firstName      String
+  lastName       String
+  role           String
+  isActive       Boolean   @default(false)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  espacesFormateur EspacePedagogique[]
+  inscriptions     Inscription[]
+  assignations     Assignation[]
+}
+
+model Promotion {
+  id           String              @id @default(cuid())
+  name         String
+  academicYear String
+  createdAt    DateTime            @default(now())
+  updatedAt    DateTime            @updatedAt
+
+  espaces EspacePedagogique[]
+}
+
+model EspacePedagogique {
+  id            String          @id @default(cuid())
+  titre         String
+  matiere       String
+  promotionId   String
+  formateurId   String
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  promotion     Promotion       @relation(fields: [promotionId], references: [id])
+  formateur     User            @relation(fields: [formateurId], references: [id])
+  inscriptions  Inscription[]
+  travaux       Travail[]
+}
+
+model Inscription {
+  id                   String             @id @default(cuid())
+  espacePedagogiqueId  String
+  etudiantId           String
+  createdAt            DateTime           @default(now())
+
+  espacePedagogique    EspacePedagogique  @relation(fields: [espacePedagogiqueId], references: [id])
+  etudiant             User               @relation(fields: [etudiantId], references: [id])
+
+  @@unique([espacePedagogiqueId, etudiantId])
+}
+
+model Travail {
+  id                   String             @id @default(cuid())
+  titre                String
+  type                 String
+  dateLimite           DateTime
+  espacePedagogiqueId  String
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  espacePedagogique    EspacePedagogique  @relation(fields: [espacePedagogiqueId], references: [id])
+  assignations         Assignation[]
+}
+
+model Assignation {
+  id         String    @id @default(cuid())
+  travailId  String
+  etudiantId String
+  statut     String
+  note       Float?
+  soumisLe   DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  travail    Travail   @relation(fields: [travailId], references: [id])
+  etudiant   User      @relation(fields: [etudiantId], references: [id])
+
+  @@unique([travailId, etudiantId])
+}
+
