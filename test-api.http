@@ -1,0 +1,19 @@
+# Test des endpoints d'assignation SETICE
+# Utiliser avec l'extension REST Client de VS Code ou avec curl
+
+### Test de l'endpoint GET (sans authentification - devrait retourner 401)
+GET http://localhost:3001/api/v1/assignations
+Content-Type: application/json
+
+### Test de l'endpoint POST (sans authentification - devrait retourner 401)
+POST http://localhost:3001/api/v1/assignations
+Content-Type: application/json
+
+{
+  "travailId": "test-travail-id",
+  "etudiantId": "test-etudiant-id"
+}
+
+### Test avec curl (à exécuter dans le terminal)
+# curl -X GET http://localhost:3001/api/v1/assignations
+# curl -X POST http://localhost:3001/api/v1/assignations -H "Content-Type: application/json" -d '{"travailId":"test","etudiantId":"test"}'

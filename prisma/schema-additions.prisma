@@ -1,0 +1,88 @@
+// ========================================
+// AJOUTS À FAIRE DANS LE FICHIER EXISTANT prisma/schema.prisma
+// ========================================
+
+// 1. AJOUTER CES MODÈLES À LA FIN DU FICHIER
+
+model Travail {
+  id                    String    @id @default(uuid())
+  titre                 String
+  description           String?
+  type                  TravailType @default(INDIVIDUEL)
+  dateLimite            DateTime  @map("date_limite")
+  bareme                Int       @default(20)
+  statut                TravailStatut @default(NON_ASSIGNE)
+  espacePedagogiqueId   String    @map("espace_pedagogique_id")
+  formateurId           String    @map("formateur_id")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  espacePedagogique  EspacePedagogique @relation(fields: [espacePedagogiqueId], references: [id], onDelete: Cascade)
+  formateur          Formateur         @relation(fields: [formateurId], references: [id], onDelete: Cascade)
+  assignations       Assignation[]
+
+  @@map("travaux")
+}
+
+model Assignation {
+  id              String   @id @default(uuid())
+  travailId       String   @map("travail_id")
+  etudiantId      String   @map("etudiant_id")
+  statut          AssignationStatut @default(ASSIGNE)
+  dateAssignation DateTime @default(now()) @map("date_assignation")
+  dateLivraison   DateTime? @map("date_livraison")
+  note            Float?
+
+  // Relations
+  travail   Travail  @relation(fields: [travailId], references: [id], onDelete: Cascade)
+  etudiant  Etudiant @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+
+  // Contrainte unique pour éviter les doublons
+  @@unique([travailId, etudiantId])
+  @@map("assignations")
+}
+
+model Inscription {
+  etudiantId           String @map("etudiant_id")
+  espacePedagogiqueId  String @map("espace_pedagogique_id")
+
+  // Relations
+  etudiant          Etudiant          @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+  espacePedagogique EspacePedagogique @relation(fields: [espacePedagogiqueId], references: [id], onDelete: Cascade)
+
+  @@id([etudiantId, espacePedagogiqueId])
+  @@map("inscriptions")
+}
+
+// 2. AJOUTER CES ENUMS AVANT LES MODÈLES
+
+enum TravailType {
+  INDIVIDUEL
+  COLLECTIF
+}
+
+enum TravailStatut {
+  NON_ASSIGNE
+  ASSIGNE
+  TERMINE
+}
+
+enum AssignationStatut {
+  ASSIGNE
+  LIVRE
+  EVALUE
+}
+
+// 3. AJOUTER CES RELATIONS DANS LES MODÈLES EXISTANTS
+
+// Dans le modèle Formateur existant, ajouter :
+// travaux Travail[]
+
+// Dans le modèle Etudiant existant, ajouter :
+// assignations Assignation[]
+// inscriptions Inscription[]
+
+// Dans le modèle EspacePedagogique existant, ajouter :
+// travaux Travail[]
+// inscriptions Inscription[]

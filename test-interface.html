@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interface US 6.1 - SETICE</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        
+        .header h1 {
+            color: #667eea;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            color: #333;
+            margin-bottom: 1rem;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            width: 100%;
+            margin-top: 1rem;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-top: 0.5rem;
+            background: white;
+        }
+        
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        label {
+            display: block;
+            color: #555;
+            font-weight: 600;
+            margin-top: 1rem;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎓 SETICE - Test Interface US 6.1</h1>
+            <p>Testeur d'API pour l'assignation de travaux individuels</p>
+        </div>
+        
+        <div class="grid">
+            <!-- Test 1: Récupérer les travaux -->
+            <div class="card">
+                <h2>📚 Test 1: Récupérer les travaux</h2>
+                <button class="btn" onclick="getTravaux()">
+                    <span id="btn-travaux">Charger les travaux individuels</span>
+                </button>
+                <div id="result-travaux" class="result" style="display:none;"></div>
+            </div>
+            
+            <!-- Test 2: Récupérer les étudiants -->
+            <div class="card">
+                <h2>👥 Test 2: Récupérer les étudiants</h2>
+                <label for="espace-select">Espace pédagogique:</label>
+                <select id="espace-select">
+                    <option value="">-- Sélectionner un espace --</option>
+                </select>
+                <button class="btn" onclick="getEtudiants()">
+                    <span id="btn-etudiants">Charger les étudiants</span>
+                </button>
+                <div id="result-etudiants" class="result" style="display:none;"></div>
+            </div>
+            
+            <!-- Test 3: Créer une assignation -->
+            <div class="card">
+                <h2>✅ Test 3: Créer une assignation</h2>
+                <label for="travail-select">Travail:</label>
+                <select id="travail-select">
+                    <option value="">-- Sélectionner un travail --</option>
+                </select>
+                <label for="etudiant-select">Étudiant:</label>
+                <select id="etudiant-select">
+                    <option value="">-- Sélectionner un étudiant --</option>
+                </select>
+                <button class="btn" onclick="createAssignation()">
+                    <span id="btn-assign">Créer l'assignation</span>
+                </button>
+                <div id="result-assign" class="result" style="display:none;"></div>
+            </div>
+            
+            <!-- Test 4: Récupérer les assignations -->
+            <div class="card">
+                <h2>📊 Test 4: Liste des assignations</h2>
+                <button class="btn" onclick="getAssignations()">
+                    <span id="btn-assignations">Charger les assignations</span>
+                </button>
+                <div id="result-assignations" class="result" style="display:none;"></div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>ℹ️ Instructions</h2>
+            <div class="info">
+                <p><strong>Prérequis:</strong> Assurez-vous que le serveur Next.js est lancé (<code>npm run dev</code>) et que les données de test sont chargées (<code>npm run seed</code>).</p>
+                <br>
+                <p><strong>Ordre de test recommandé:</strong></p>
+                <ol style="margin-left: 1.5rem; margin-top: 0.5rem;">
+                    <li>Charger les travaux (Test 1)</li>
+                    <li>Sélectionner un espace et charger les étudiants (Test 2)</li>
+                    <li>Créer une assignation (Test 3)</li>
+                    <li>Vérifier les assignations (Test 4)</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const API_BASE = 'http://localhost:3000/api/v1';
+        
+        let travaux = [];
+        let etudiants = [];
+        let espaces = [];
+        
+        async function getTravaux() {
+            const btn = document.getElementById('btn-travaux');
+            const result = document.getElementById('result-travaux');
+            
+            btn.innerHTML = '<span class="loading"></span> Chargement...';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/travaux?type=INDIVIDUEL`);
+                const data = await response.json();
+                
+                travaux = data.travaux || [];
+                
+                // Extraire les espaces uniques
+                espaces = [...new Set(travaux.map(t => ({
+                    id: t.espacePedagogique.id,
+                    nom: t.espacePedagogique.nom
+                })))];
+                
+                // Remplir les selects
+                const travailSelect = document.getElementById('travail-select');
+                travailSelect.innerHTML = '<option value="">-- Sélectionner un travail --</option>';
+                travaux.forEach(t => {
+                    const option = document.createElement('option');
+                    option.value = t.id;
+                    option.textContent = `${t.titre} (${t.espacePedagogique.nom})`;
+                    travailSelect.appendChild(option);
+                });
+                
+                const espaceSelect = document.getElementById('espace-select');
+                espaceSelect.innerHTML = '<option value="">-- Sélectionner un espace --</option>';
+                espaces.forEach(e => {
+                    const option = document.createElement('option');
+                    option.value = e.id;
+                    option.textContent = e.nom;
+                    espaceSelect.appendChild(option);
+                });
+                
+                result.className = 'result success';
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.display = 'block';
+                
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `Erreur: ${error.message}`;
+                result.style.display = 'block';
+            } finally {
+                btn.innerHTML = 'Charger les travaux individuels';
+            }
+        }
+        
+        async function getEtudiants() {
+            const espaceId = document.getElementById('espace-select').value;
+            const btn = document.getElementById('btn-etudiants');
+            const result = document.getElementById('result-etudiants');
+            
+            if (!espaceId) {
+                alert('Veuillez sélectionner un espace pédagogique');
+                return;
+            }
+            
+            btn.innerHTML = '<span class="loading"></span> Chargement...';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/etudiants?espacePedagogiqueId=${espaceId}`);
+                const data = await response.json();
+                
+                etudiants = data.etudiants || [];
+                
+                // Remplir le select
+                const etudiantSelect = document.getElementById('etudiant-select');
+                etudiantSelect.innerHTML = '<option value="">-- Sélectionner un étudiant --</option>';
+                etudiants.forEach(e => {
+                    const option = document.createElement('option');
+                    option.value = e.id;
+                    option.textContent = `${e.user.prenom} ${e.user.nom} (${e.user.email})`;
+                    etudiantSelect.appendChild(option);
+                });
+                
+                result.className = 'result success';
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.display = 'block';
+                
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `Erreur: ${error.message}`;
+                result.style.display = 'block';
+            } finally {
+                btn.innerHTML = 'Charger les étudiants';
+            }
+        }
+        
+        async function createAssignation() {
+            const travailId = document.getElementById('travail-select').value;
+            const etudiantId = document.getElementById('etudiant-select').value;
+            const btn = document.getElementById('btn-assign');
+            const result = document.getElementById('result-assign');
+            
+            if (!travailId || !etudiantId) {
+                alert('Veuillez sélectionner un travail et un étudiant');
+                return;
+            }
+            
+            btn.innerHTML = '<span class="loading"></span> Création...';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/assignations`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ travailId, etudiantId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    result.className = 'result success';
+                    result.textContent = `✅ Succès!\n\n${JSON.stringify(data, null, 2)}`;
+                } else {
+                    result.className = 'result error';
+                    result.textContent = `❌ Erreur ${response.status}\n\n${JSON.stringify(data, null, 2)}`;
+                }
+                result.style.display = 'block';
+                
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `Erreur: ${error.message}`;
+                result.style.display = 'block';
+            } finally {
+                btn.innerHTML = 'Créer l\'assignation';
+            }
+        }
+        
+        async function getAssignations() {
+            const btn = document.getElementById('btn-assignations');
+            const result = document.getElementById('result-assignations');
+            
+            btn.innerHTML = '<span class="loading"></span> Chargement...';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch(`${API_BASE}/assignations`);
+                const data = await response.json();
+                
+                result.className = 'result success';
+                result.textContent = JSON.stringify(data, null, 2);
+                result.style.display = 'block';
+                
+            } catch (error) {
+                result.className = 'result error';
+                result.textContent = `Erreur: ${error.message}`;
+                result.style.display = 'block';
+            } finally {
+                btn.innerHTML = 'Charger les assignations';
+            }
+        }
+    </script>
+</body>
+</html>

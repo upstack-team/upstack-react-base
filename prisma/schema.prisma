@@ -1,0 +1,124 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+// Modèles de base
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  nom       String
+  prenom    String
+  role      String   // "FORMATEUR" | "ETUDIANT" | "ADMIN"
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  formateur Formateur?
+  etudiant  Etudiant?
+
+  @@map("users")
+}
+
+model Formateur {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  
+  // Relations
+  user                 User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  espacesPedagogiques  EspacePedagogique[]
+  travaux              Travail[]
+
+  @@map("formateurs")
+}
+
+model Etudiant {
+  id     String @id @default(uuid())
+  userId String @unique @map("user_id")
+  
+  // Relations
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignations Assignation[]
+  inscriptions Inscription[]
+
+  @@map("etudiants")
+}
+
+model EspacePedagogique {
+  id          String @id @default(uuid())
+  nom         String
+  description String?
+  formateurId String @map("formateur_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  formateur    Formateur     @relation(fields: [formateurId], references: [id], onDelete: Cascade)
+  travaux      Travail[]
+  inscriptions Inscription[]
+
+  @@map("espaces_pedagogiques")
+}
+
+// Nouveaux modèles pour l'assignation
+model Travail {
+  id                    String        @id @default(uuid())
+  titre                 String
+  description           String?
+  type                  String        @default("INDIVIDUEL") // "INDIVIDUEL" | "COLLECTIF"
+  dateLimite            DateTime      @map("date_limite")
+  bareme                Int           @default(20)
+  statut                String        @default("NON_ASSIGNE") // "NON_ASSIGNE" | "ASSIGNE" | "TERMINE"
+  espacePedagogiqueId   String        @map("espace_pedagogique_id")
+  formateurId           String        @map("formateur_id")
+  createdAt             DateTime      @default(now()) @map("created_at")
+  updatedAt             DateTime      @updatedAt @map("updated_at")
+
+  // Relations
+  espacePedagogique  EspacePedagogique @relation(fields: [espacePedagogiqueId], references: [id], onDelete: Cascade)
+  formateur          Formateur         @relation(fields: [formateurId], references: [id], onDelete: Cascade)
+  assignations       Assignation[]
+
+  @@map("travaux")
+}
+
+model Assignation {
+  id              String            @id @default(uuid())
+  travailId       String            @map("travail_id")
+  etudiantId      String            @map("etudiant_id")
+  statut          String            @default("ASSIGNE") // "ASSIGNE" | "LIVRE" | "EVALUE"
+  dateAssignation DateTime          @default(now()) @map("date_assignation")
+  dateLivraison   DateTime?         @map("date_livraison")
+  note            Float?
+  createdAt       DateTime          @default(now()) @map("created_at")
+  updatedAt       DateTime          @updatedAt @map("updated_at")
+
+  // Relations
+  travail   Travail  @relation(fields: [travailId], references: [id], onDelete: Cascade)
+  etudiant  Etudiant @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+
+  // Contrainte unique pour éviter les doublons
+  @@unique([travailId, etudiantId])
+  @@map("assignations")
+}
+
+model Inscription {
+  etudiantId           String   @map("etudiant_id")
+  espacePedagogiqueId  String   @map("espace_pedagogique_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  etudiant          Etudiant          @relation(fields: [etudiantId], references: [id], onDelete: Cascade)
+  espacePedagogique EspacePedagogique @relation(fields: [espacePedagogiqueId], references: [id], onDelete: Cascade)
+
+  @@id([etudiantId, espacePedagogiqueId])
+  @@map("inscriptions")
+}
