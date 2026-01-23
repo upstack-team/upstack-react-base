@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Search, Filter, Eye, FileEdit } from "lucide-react"
+import { Search, Filter, Eye, FileEdit, Star, CheckCircle2 } from "lucide-react"
 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -32,6 +32,11 @@ interface AssignationsTableProps {
 }
 
 export function AssignationsTable({ data, onEvaluer, onVoir }: AssignationsTableProps) {
+  console.log("📊 [ASSIGNATIONS_TABLE] Rendu du tableau:", {
+    total: data.total,
+    assignations: data.assignations.length
+  })
+
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
   const [sortBy, setSortBy] = useState<string>("nom")
@@ -53,7 +58,7 @@ export function AssignationsTable({ data, onEvaluer, onVoir }: AssignationsTable
         case "nom":
           return a.etudiant.user.nom.localeCompare(b.etudiant.user.nom)
         case "date":
-          return new Date(b.dateAssignation).getTime() - new Date(a.dateAssignation).getTime()
+          return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         case "note":
           const noteA = a.evaluation?.note ?? -1
           const noteB = b.evaluation?.note ?? -1
@@ -67,6 +72,8 @@ export function AssignationsTable({ data, onEvaluer, onVoir }: AssignationsTable
   }, [data.assignations, searchQuery, statusFilter, sortBy])
 
   const getStatutBadge = (statut: StatutAssignation, note?: number) => {
+    console.log("🏷️ [ASSIGNATIONS_TABLE] getStatutBadge:", { statut, note })
+
     switch (statut) {
       case "ASSIGNE":
         return (
@@ -82,7 +89,8 @@ export function AssignationsTable({ data, onEvaluer, onVoir }: AssignationsTable
         )
       case "EVALUE":
         return (
-          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+          <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 gap-1">
+            <CheckCircle2 className="h-3 w-3" />
             {note !== undefined ? `${note}/${data.travail.bareme}` : "Évalué"}
           </Badge>
         )
@@ -155,51 +163,87 @@ export function AssignationsTable({ data, onEvaluer, onVoir }: AssignationsTable
                 </TableCell>
               </TableRow>
             ) : (
-              filteredAssignations.map((assignation) => (
-                <TableRow key={assignation.id}>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">
-                        {assignation.etudiant.user.nom.toUpperCase()}{" "}
-                        {assignation.etudiant.user.prenom}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {assignation.etudiant.user.email}
-                      </p>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-mono text-sm">
-                    {assignation.etudiant.matricule}
-                  </TableCell>
-                  <TableCell className="text-sm">
-                    {format(new Date(assignation.dateAssignation), "d MMM yyyy 'à' HH:mm", { locale: fr })}
-                  </TableCell>
-                  <TableCell>
-                    {getStatutBadge(assignation.statut, assignation.evaluation?.note)}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {assignation.statut === "LIVRE" ? (
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => onEvaluer(assignation.id)}
-                      >
-                        <FileEdit className="mr-2 h-4 w-4" />
-                        Noter
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onVoir(assignation.id)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        Voir
-                      </Button>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))
+              filteredAssignations.map((assignation) => {
+                console.log("📝 [ASSIGNATIONS_TABLE] Ligne:", {
+                  id: assignation.id.slice(0, 8),
+                  etudiant: `${assignation.etudiant.user.nom} ${assignation.etudiant.user.prenom}`,
+                  statut: assignation.statut,
+                  hasEvaluation: !!assignation.evaluation,
+                  evaluationNote: assignation.evaluation?.note
+                })
+
+                const isEvalue = assignation.statut === "EVALUE"
+                const isLivre = assignation.statut === "LIVRE"
+                const canEvaluate = isLivre && !isEvalue
+
+                return (
+                  <TableRow key={assignation.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">
+                          {assignation.etudiant.user.nom.toUpperCase()}{" "}
+                          {assignation.etudiant.user.prenom}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {assignation.etudiant.user.email}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-mono text-sm">
+                      {assignation.etudiant.matricule}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {format(new Date(assignation.createdAt), "d MMM yyyy 'à' HH:mm", {
+                        locale: fr,
+                      })}
+                    </TableCell>
+                    <TableCell>
+                      {getStatutBadge(assignation.statut, assignation.evaluation?.note)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {/* Bouton Noter (seulement si LIVRE et pas évalué) */}
+                        {canEvaluate && (
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              console.log("📝 [ASSIGNATIONS_TABLE] Noter cliqué:", assignation.id)
+                              onEvaluer(assignation.id)
+                            }}
+                          >
+                            <FileEdit className="mr-2 h-4 w-4" />
+                            Noter
+                          </Button>
+                        )}
+
+                        {/* Bouton Voir (toujours disponible si livré ou évalué) */}
+                        {(isLivre || isEvalue) && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              console.log("👁️ [ASSIGNATIONS_TABLE] Voir cliqué:", assignation.id)
+                              onVoir(assignation.id)
+                            }}
+                          >
+                            <Eye className="mr-2 h-4 w-4" />
+                            Voir
+                          </Button>
+                        )}
+
+                        {/* Badge pour les évalués */}
+                        {isEvalue && !canEvaluate && (
+                          <Badge variant="secondary" className="gap-1">
+                            <Star className="h-3 w-3" />
+                            Déjà noté
+                          </Badge>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                )
+              })
             )}
           </TableBody>
         </Table>

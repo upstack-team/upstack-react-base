@@ -36,9 +36,7 @@ export async function createEtudiant(input: CreateEtudiantInput) {
   }
 
   // 3️⃣ Mot de passe temporaire
-  const tempPassword =
-  input.temporaryPassword?.trim() ||
-  generateTemporaryPassword()
+  const tempPassword = generateTemporaryPassword()
   const hashedPassword = await hashPassword(tempPassword)
 
   // 4️⃣ Créer User

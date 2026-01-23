@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
@@ -49,7 +50,17 @@ export function EvaluationModal({
   travailTitre,
   onEvaluationCreated,
 }: EvaluationModalProps) {
+  const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  console.log("📝 [EVAL_MODAL] Props reçues:", {
+    assignationId: assignation?.id,
+    etudiantNom: assignation?.etudiant?.user?.nom,
+    etudiantPrenom: assignation?.etudiant?.user?.prenom,
+    bareme,
+    travailTitre,
+    open
+  })
 
   const evaluationSchema = z.object({
     note: z
@@ -79,30 +90,66 @@ export function EvaluationModal({
   const currentNote = watch("note")
 
   const onSubmit = async (data: EvaluationFormData) => {
+    console.log("")
+    console.log("📝 [EVAL_MODAL] ========================================")
+    console.log("📝 [EVAL_MODAL] SOUMISSION DE L'ÉVALUATION")
+    console.log("📝 [EVAL_MODAL] ========================================")
+
+    console.log("📝 [EVAL_MODAL] Données du formulaire:", {
+      note: data.note,
+      bareme: bareme,
+      commentaire: data.commentaire,
+      assignationId: assignation.id
+    })
+
     setIsSubmitting(true)
+
     try {
-      const response = await api.createEvaluation({
+      const payload = {
         assignationId: assignation.id,
         note: data.note,
         commentaire: data.commentaire,
+      }
+
+      console.log("📤 [EVAL_MODAL] Payload envoyé à l'API:", payload)
+
+      const response = await api.createEvaluation(payload)
+
+      console.log("📥 [EVAL_MODAL] Réponse de l'API:", {
+        success: response.success,
+        data: response.data,
+        error: response.error
       })
 
       if (response.success) {
+        console.log("✅ [EVAL_MODAL] Évaluation créée avec succès!")
+        
         toast.success("Évaluation enregistrée avec succès")
         reset()
         onEvaluationCreated()
         onOpenChange(false)
+
+        // Rafraîchir la page après un court délai
+        setTimeout(() => {
+          console.log("🔄 [EVAL_MODAL] Rafraîchissement de la page...")
+          window.location.reload()
+        }, 500)
       } else {
+        console.error("❌ [EVAL_MODAL] Échec de la création:", response.error)
         toast.error(response.error || "Erreur lors de l'évaluation")
       }
-    } catch {
-      toast.error("Une erreur est survenue")
+    } catch (error: any) {
+      console.error("❌ [EVAL_MODAL] Exception attrapée:", error)
+      toast.error(error?.message || "Une erreur est survenue")
     } finally {
       setIsSubmitting(false)
+      console.log("🏁 [EVAL_MODAL] FIN DE LA SOUMISSION")
+      console.log("")
     }
   }
 
   const handleClose = () => {
+    console.log("🚪 [EVAL_MODAL] Fermeture du modal")
     reset()
     onOpenChange(false)
   }
@@ -155,6 +202,11 @@ export function EvaluationModal({
                 </span>
               </div>
             )}
+          </div>
+
+          {/* Debug info */}
+          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded font-mono">
+            ID: {assignation.id.slice(0, 8)}...
           </div>
 
           {/* Note */}
@@ -225,7 +277,7 @@ export function EvaluationModal({
             </Button>
             <Button type="submit" disabled={isSubmitting}>
               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Enregistrer
+              {isSubmitting ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
         </form>

@@ -29,7 +29,7 @@ export class Etudiant {
   promotion!: Promotion
 
   // L'étudiant est un user
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, {  onDelete: 'CASCADE' })
   @JoinColumn()
   user!: User
 

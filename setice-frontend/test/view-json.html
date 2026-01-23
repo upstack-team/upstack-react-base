@@ -1,0 +1,29 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Détails du travail</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; }
+    pre { background:#f6f8fa; padding:16px; border-radius:6px; white-space:pre-wrap; }
+    h1 { margin-bottom:12px; }
+  </style>
+</head>
+<body>
+  <h1>Détails du travail</h1>
+  <pre id="out">Chargement…</pre>
+  <script>
+    const id = "cce528cf-12c1-49b4-b680-b0ea6cf88c12";
+    fetch(`http://localhost:3001/travaux?id=${encodeURIComponent(id)}`)
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(arr => {
+        const item = Array.isArray(arr) && arr.length ? arr[0] : null;
+        document.getElementById('out').textContent = item ? JSON.stringify(item, null, 2) : 'Aucun résultat';
+      })
+      .catch(e => {
+        document.getElementById('out').textContent = 'Erreur: ' + e.message;
+        console.error(e);
+      });
+  </script>
+</body>
+</html>

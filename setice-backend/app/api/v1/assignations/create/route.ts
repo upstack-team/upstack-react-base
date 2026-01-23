@@ -1,47 +1,96 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { deliverTravail } from '@/src/services/assignation.service'
+import { assignTravail } from '@/src/services/assignation.service'
+import { travailRepository } from '@/src/repositories/travail.repository'
+import { etudiantRepository } from '@/src/repositories/etudiant.repository'
+import { Role } from '@/src/entities/User'
 
 const JWT_SECRET = process.env.NEXTAUTH_SECRET || 'super-secret-key'
 
-async function getUserFromToken(req: NextRequest) {
-  const authHeader = req.headers.get('authorization')
-  if (!authHeader?.startsWith('Bearer ')) throw new Error('Unauthorized')
-  const token = authHeader.split(' ')[1]
-  return jwt.verify(token, JWT_SECRET) as any
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin': 'http://localhost:3000',
+  'Access-Control-Allow-Methods': 'POST,OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
 }
 
-// ✅ POST /api/v1/assignations/deliver
+export async function OPTIONS() {
+  console.log('✅ OPTIONS /api/v1/assignations/create called')
+  return new Response(null, { status: 204, headers: CORS_HEADERS })
+}
+
+function getUser(req: NextRequest) {
+  const auth = req.headers.get('authorization')
+  if (!auth?.startsWith('Bearer ')) throw new Error('UNAUTHORIZED')
+  return jwt.verify(auth.split(' ')[1], JWT_SECRET) as any
+}
+
+// app/api/v1/assignations/create/route.ts
+
 export async function POST(req: NextRequest) {
+  console.log('🟢 POST /api/v1/assignations/create called')
+  
   try {
-    const user = await getUserFromToken(req)
-    if (user.role !== 'ETUDIANT') return NextResponse.json({ success: false, error: 'FORBIDDEN' }, { status: 403 })
+    console.log('1️⃣ Extracting formateur from token...')
+    const formateurJWT = getUser(req)
+    console.log('✅ Formateur JWT:', formateurJWT)
 
+    if (formateurJWT.role !== Role.FORMATEUR) {
+      console.log('❌ FORBIDDEN: User is not FORMATEUR')
+      return NextResponse.json(
+        { success: false, error: 'FORBIDDEN' },
+        { status: 403, headers: CORS_HEADERS }
+      )
+    }
+
+    console.log('2️⃣ Parsing request body...')
     const body = await req.json()
-    const { assignationId } = body
-    if (!assignationId) return NextResponse.json({ success: false, error: 'ASSIGNATION_ID_REQUIRED' }, { status: 400 })
+    console.log('✅ Request body:', body)
+    
+    const { travailId, etudiantId } = body
 
-    const result = await deliverTravail(assignationId, user)
-    return NextResponse.json({ success: true, data: result })
+    if (!travailId || !etudiantId) {
+      console.log('❌ MISSING_FIELDS:', { travailId, etudiantId })
+      return NextResponse.json(
+        { success: false, error: 'MISSING_FIELDS' },
+        { status: 400, headers: CORS_HEADERS }
+      )
+    }
+
+    console.log('3️⃣ Fetching travail...', travailId)
+    const travail = await travailRepository.findById(travailId)
+    if (!travail) {
+      console.log('❌ TRAVAIL_NOT_FOUND')
+      throw new Error('TRAVAIL_NOT_FOUND')
+    }
+    console.log('✅ Travail found:', travail.id, travail.titre)
+
+    console.log('4️⃣ Fetching etudiant...', etudiantId)
+    const etudiant = await etudiantRepository.findById(etudiantId)
+    if (!etudiant) {
+      console.log('❌ ETUDIANT_NOT_FOUND')
+      throw new Error('ETUDIANT_NOT_FOUND')
+    }
+    console.log('✅ Etudiant found:', etudiant.id, etudiant.matricule)
+
+    console.log('5️⃣ Creating assignation...')
+    const assignation = await assignTravail({
+      travail,
+      etudiant,
+      formateur: travail.formateur, // ✅ Utilisez le formateur du travail
+    })
+    console.log('✅ Assignation created:', assignation.id)
+
+    return NextResponse.json(
+      { success: true, data: assignation },
+      { headers: CORS_HEADERS }
+    )
   } catch (err: any) {
-    console.error('DELIVER TRAVAIL ERROR:', err)
-    return NextResponse.json({ success: false, error: err.message }, { status: 400 })
-  }
-}
-
-// ✅ GET /api/v1/assignations?etudiantId=xxx
-export async function GET(req: NextRequest) {
-  try {
-    const url = new URL(req.url)
-    const etudiantId = url.searchParams.get('etudiantId')
-    if (!etudiantId) return NextResponse.json({ success: false, error: 'ETUDIANT_ID_REQUIRED' }, { status: 400 })
-
-    const { assignationRepository } = await import('@/src/repositories/assignation.repository')
-    const assignations = await assignationRepository.listByEtudiant(etudiantId)
-    return NextResponse.json({ success: true, data: assignations })
-  } catch (err: any) {
-    console.error('GET ASSIGNATIONS ERROR:', err)
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 })
+    console.error('❌ CREATE ASSIGNATION ERROR:', err)
+    console.error('Stack trace:', err.stack)
+    return NextResponse.json(
+      { success: false, error: err.message },
+      { status: 400, headers: CORS_HEADERS }
+    )
   }
 }

@@ -1,0 +1,10 @@
+{
+  "travaux": [
+    {
+      "id": "cce528cf-12c1-49b4-b680-b0ea6cf88c12",
+      "titre": "Exemple de travaux",
+      "description": "Détails de test",
+      "statut": "en cours"
+    }
+  ]
+}

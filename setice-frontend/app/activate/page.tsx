@@ -1,13 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { toast } from "react-hot-toast" // si tu utilises un système de notifications
+import { toast } from "react-hot-toast"
 
 export default function ActivatePage() {
-  const router = useRouter()
   const searchParams = useSearchParams()
   const token = searchParams.get("token") || ""
 
@@ -32,14 +31,29 @@ export default function ActivatePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ token, newPassword: password }),
       })
+      
       const data = await res.json()
-      if (!data.success) throw new Error(data.error)
+      
+      if (!data.success) {
+        throw new Error(data.error)
+      }
 
-      toast.success("Compte activé avec succès ! Vous pouvez vous connecter.")
-      window.location.href = "/login"
+      console.log("✅ Activation réussie")
+      
+      // Afficher un message de succès
+      toast.success("Compte activé avec succès !")
+      
+      // ✅ SOLUTION ULTIME: Forcer le rechargement complet avec timestamp
+      // Cela empêche Next.js de servir la page depuis le cache
+      setTimeout(() => {
+        const loginUrl = `/login?activated=${Date.now()}`
+        console.log("🚀 Redirection forcée vers:", loginUrl)
+        window.location.href = loginUrl
+      }, 1500)
+      
     } catch (err: any) {
+      console.error("❌ Erreur:", err)
       toast.error(err.message || "Erreur lors de l'activation")
-    } finally {
       setIsLoading(false)
     }
   }
@@ -55,6 +69,8 @@ export default function ActivatePage() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           className="mb-3"
+          disabled={isLoading}
+          autoComplete="new-password"
         />
         <Input
           type="password"
@@ -62,10 +78,12 @@ export default function ActivatePage() {
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
           className="mb-4"
+          disabled={isLoading}
+          autoComplete="new-password"
         />
 
         <Button onClick={handleActivate} disabled={isLoading} className="w-full">
-          {isLoading ? "Activation..." : "Activer mon compte"}
+          {isLoading ? "Activation en cours..." : "Activer mon compte"}
         </Button>
       </div>
     </div>

@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from 'sonner'
 import './globals.css'
+import { AuthProvider } from '@/context/auth-context'  // 🔹 import du provider
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -20,9 +21,11 @@ export default function RootLayout({
   return (
     <html lang="fr">
       <body className={`${inter.className} antialiased`}>
-        {children}
-        <Toaster richColors position="top-right" />
-        <Analytics />
+        <AuthProvider> {/* 🔹 Wrap ici */}
+          {children}
+          <Toaster richColors position="top-right" />
+          <Analytics />
+        </AuthProvider>
       </body>
     </html>
   )

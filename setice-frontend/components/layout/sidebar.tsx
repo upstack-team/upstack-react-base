@@ -14,6 +14,7 @@ const navigation = [
   { name: "Formateurs", href: "/formateurs", icon: Users },
   { name: "Étudiants", href: "/etudiants", icon: GraduationCap },
   { name: "Promotions", href: "/promotions", icon: FolderKanban },
+  { name: "Classements", href: "/classements", icon: GraduationCap},
 ]
 
 export function Sidebar() {

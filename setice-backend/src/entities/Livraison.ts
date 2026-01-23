@@ -6,7 +6,7 @@ import {
   Column,
   CreateDateColumn,
 } from 'typeorm'
-import { Assignation } from './Assignation'
+import { Assignation } from '@/src/entities/Assignation'
 
 @Entity('livraisons')
 export class Livraison {

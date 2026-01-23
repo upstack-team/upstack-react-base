@@ -17,6 +17,8 @@ import type { EspacePedagogique } from "@/types"
 export default function FormateurDashboard() {
   const { user } = useAuth()
   const [espaces, setEspaces] = useState<EspacePedagogique[]>([])
+  const [travaux, setTravaux] = useState<any[]>([]) // tu peux typer selon ton modèle
+
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
@@ -26,6 +28,8 @@ export default function FormateurDashboard() {
         if (response.success && response.data) {
           setEspaces(response.data)
         }
+
+        
       } catch (error) {
         console.error("Error loading data:", error)
       } finally {
@@ -82,7 +86,7 @@ export default function FormateurDashboard() {
           />
           <StatsCard
             title="Travaux créés"
-            value={0}
+            value={travaux.length}
             icon={ClipboardList}
           />
           <StatsCard

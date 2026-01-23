@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { format } from "date-fns"
 import { fr } from "date-fns/locale"
-import { Plus, ClipboardList, Search, Filter } from "lucide-react"
+import { Plus, ClipboardList, Search, Filter, Pencil, Trash2, MoreVertical } from "lucide-react"
 import { DashboardLayout } from "@/components/layout/DashboardLayout"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,21 +18,47 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Skeleton } from "@/components/ui/skeleton"
+import { useToast } from "@/hooks/use-toast"
 import { api } from "@/lib/api"
 import type { EspacePedagogique, Travail } from "@/types"
-import { useSearchParams } from "next/navigation"
-import { Suspense } from "react"
 
 const Loading = () => null
 
 export default function TravauxPage() {
-  const searchParams = useSearchParams()
+  const router = useRouter()
+  const { toast } = useToast()
   const [espaces, setEspaces] = useState<EspacePedagogique[]>([])
   const [travaux, setTravaux] = useState<Travail[]>([])
   const [selectedEspace, setSelectedEspace] = useState<string>("all")
   const [searchQuery, setSearchQuery] = useState("")
   const [isLoading, setIsLoading] = useState(true)
+  const [deleteDialog, setDeleteDialog] = useState<{
+    open: boolean
+    travailId: string | null
+    titre: string
+  }>({
+    open: false,
+    travailId: null,
+    titre: "",
+  })
 
   useEffect(() => {
     async function loadData() {
@@ -39,7 +66,6 @@ export default function TravauxPage() {
       if (espacesResponse.success && espacesResponse.data) {
         setEspaces(espacesResponse.data)
 
-        // Load travaux for each espace
         const allTravaux: Travail[] = []
         for (const espace of espacesResponse.data) {
           const travauxResponse = await api.getTravauxByEspace(espace.id)
@@ -59,6 +85,52 @@ export default function TravauxPage() {
     const matchesEspace = selectedEspace === "all" || travail.espacePedagogique.id === selectedEspace
     return matchesSearch && matchesEspace
   })
+
+  const handleEdit = (e: React.MouseEvent, travailId: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    router.push(`/formateur/travaux/${travailId}/edit`)
+  }
+
+  const openDeleteDialog = (e: React.MouseEvent, travail: Travail) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setDeleteDialog({
+      open: true,
+      travailId: travail.id,
+      titre: travail.titre,
+    })
+  }
+
+  const handleDelete = async () => {
+    if (!deleteDialog.travailId) return
+
+    try {
+      const response = await api.deleteTravail(deleteDialog.travailId)
+      
+      if (response.success) {
+        setTravaux(travaux.filter((t) => t.id !== deleteDialog.travailId))
+        toast({
+          title: "Travail supprimé",
+          description: "Le travail a été supprimé avec succès",
+        })
+      } else {
+        toast({
+          title: "Erreur",
+          description: response.error || "Impossible de supprimer le travail",
+          variant: "destructive",
+        })
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Une erreur est survenue lors de la suppression",
+        variant: "destructive",
+      })
+    } finally {
+      setDeleteDialog({ open: false, travailId: null, titre: "" })
+    }
+  }
 
   const getStatutBadge = (statut: string) => {
     switch (statut) {
@@ -157,45 +229,121 @@ export default function TravauxPage() {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {filteredTravaux.map((travail) => (
-                <Link key={travail.id} href={`/formateur/travaux/${travail.id}`}>
-                  <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
-                    <CardHeader className="pb-3">
-                      <div className="flex items-start justify-between gap-2">
-                        <CardTitle className="text-lg line-clamp-2">{travail.titre}</CardTitle>
-                        {getStatutBadge(travail.statut)}
+              {filteredTravaux.map(
+                (travail) =>
+                  travail.id && (
+                    <div key={travail.id} className="relative group">
+                      <Link href={`/formateur/travaux/${travail.id}`}>
+                        <Card className="h-full hover:border-primary/50 transition-colors cursor-pointer">
+                          <CardHeader className="pb-3">
+                            <div className="flex items-start justify-between gap-2">
+                              <CardTitle className="text-lg line-clamp-2 pr-8">
+                                {travail.titre}
+                              </CardTitle>
+                              <div className="flex items-center gap-2">
+                                {getStatutBadge(travail.statut)}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2 mt-2">
+                              {getTypeBadge(travail.type)}
+                              <span className="text-xs text-muted-foreground">
+                                {travail.bareme} points
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
+                              {travail.consignes}
+                            </p>
+                            <div className="flex flex-col gap-1 text-xs text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Espace:</span>
+                                <span>{travail.espacePedagogique.matiere.libelle}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium">Date limite:</span>
+                                <span>
+                                  {format(
+                                    new Date(travail.dateLimite),
+                                    "d MMM yyyy 'à' HH:mm",
+                                    { locale: fr }
+                                  )}
+                                </span>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </Link>
+
+                      {/* Actions Menu */}
+                      <div className="absolute top-4 right-4 z-10">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                              }}
+                            >
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={(e) => handleEdit(e, travail.id)}
+                            >
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Modifier
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={(e) => openDeleteDialog(e, travail)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Supprimer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
-                      <div className="flex items-center gap-2 mt-2">
-                        {getTypeBadge(travail.type)}
-                        <span className="text-xs text-muted-foreground">
-                          {travail.bareme} points
-                        </span>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground line-clamp-2 mb-4">
-                        {travail.consignes}
-                      </p>
-                      <div className="flex flex-col gap-1 text-xs text-muted-foreground">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Espace:</span>
-                          <span>{travail.espacePedagogique.matiere.libelle}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">Date limite:</span>
-                          <span>
-                            {format(new Date(travail.dateLimite), "d MMM yyyy 'à' HH:mm", { locale: fr })}
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
-              ))}
+                    </div>
+                  )
+              )}
             </div>
           )}
         </Suspense>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={deleteDialog.open}
+        onOpenChange={(open) =>
+          setDeleteDialog({ open, travailId: null, titre: "" })
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Êtes-vous sûr ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Vous êtes sur le point de supprimer le travail "{deleteDialog.titre}".
+              Cette action est irréversible et supprimera également toutes les
+              assignations et évaluations associées.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   )
 }

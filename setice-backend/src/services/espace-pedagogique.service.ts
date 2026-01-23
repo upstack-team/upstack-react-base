@@ -112,63 +112,38 @@ export async function assignFormateur(
 }
 
 export async function addEtudiantsFromPromotion(
-  espacePedagogiqueId: string,
+  espaceId: string,
   promotionId: string
 ) {
   const db = await getDataSource()
-  
-  // Vérifier que l'espace pédagogique existe
-  const espaceRepo = db.getRepository(EspacePedagogique)
-  const espace = await espaceRepo.findOne({
-    where: { id: espacePedagogiqueId }
-  })
-  
-  if (!espace) {
-    throw new Error('ESPACE_NOT_FOUND')
-  }
-  
-  // Vérifier que la promotion existe
-  const promotionRepo = db.getRepository(Promotion)
-  const promotion = await promotionRepo.findOne({
-    where: { id: promotionId }
-  })
-  
-  if (!promotion) {
-    throw new Error('PROMOTION_NOT_FOUND')
-  }
-  
-  // Récupérer tous les étudiants de la promotion
   const etudiantRepo = db.getRepository(Etudiant)
+  const espaceRepo = db.getRepository(EspacePedagogique)
+
+  const espace = await espaceRepo.findOne({ where: { id: espaceId } })
+  if (!espace) throw new Error('ESPACE_NOT_FOUND')
+
   const etudiants = await etudiantRepo.find({
     where: { promotion: { id: promotionId } },
-    relations: ['user']
+    relations: ['user'],
   })
-  
-  if (etudiants.length === 0) {
-    throw new Error('NO_STUDENTS_IN_PROMOTION')
-  }
-  
+  if (etudiants.length === 0) throw new Error('NO_STUDENTS_IN_PROMOTION')
 
-  
-  
-  // Inscrire les étudiants via le repository
   const etudiantIds = etudiants.map(e => e.id)
-  const result = await espacePedagogiqueRepository.addEtudiants(espacePedagogiqueId, etudiantIds)
-  
+  const result = await espacePedagogiqueRepository.addEtudiants(espaceId, etudiantIds)
+
   return {
     success: true,
     message: `${result.inscrits} étudiant(s) inscrit(s) avec succès`,
-    data: result
+    data: result,
   }
 }
-
 export async function getEspacePedagogique(id: string) {
   const espace = await espacePedagogiqueRepository.findById(id)
 
-  if (!espace) {
+  if (!espace) 
     throw new Error('ESPACE_NOT_FOUND')
-  }
-
+  
+  console.log('DEBUG ESPACE ETUDIANTS:', espace.etudiants.map(e => e.user))
   return espace
 }
 

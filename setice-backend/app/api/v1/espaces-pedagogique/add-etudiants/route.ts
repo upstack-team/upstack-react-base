@@ -7,14 +7,12 @@ import { addEtudiantsFromPromotion, getEspacePedagogique } from '@/src/services/
 import { addEtudiantsSchema } from '@/src/schemas/add-etudiants.schema'
 import { requireRole } from '@/src/middleware/auth.middleware'
 
-// 🔹 Headers CORS communs
 const corsHeaders = {
   'Access-Control-Allow-Origin': 'http://localhost:3000',
   'Access-Control-Allow-Methods': 'POST,OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 }
 
-// ✅ Pré-requête CORS
 export async function OPTIONS() {
   return new Response(null, {
     status: 204,
@@ -22,21 +20,24 @@ export async function OPTIONS() {
   })
 }
 
-// ✅ POST /api/v1/espace-pedagogique/add-etudiants
 export async function POST(req: NextRequest) {
   try {
-    // 🔐 Vérifier que l'utilisateur est Directeur des Études
-    requireRole(req, ['DIRECTEUR_ETUDES'])
+    console.log('🔵 ADD ETUDIANTS - Début') // ✅ LOG
+    
+    requireRole(req, ['DIRECTEUR_ETUDES', 'FORMATEUR'])
+    console.log('🔵 ADD ETUDIANTS - Auth OK') // ✅ LOG
 
-    // 📦 Parser et valider le body
     const body = await req.json()
-    const data = addEtudiantsSchema.parse(body)
+    console.log('🔵 ADD ETUDIANTS - Body reçu:', body) // ✅ LOG
 
-    // 🧠 Inscrire les étudiants de la promotion
+    const data = addEtudiantsSchema.parse(body)
+    console.log('🔵 ADD ETUDIANTS - Validation OK:', data) // ✅ LOG
+
     const result = await addEtudiantsFromPromotion(
       data.espacePedagogiqueId,
       data.promotionId
     )
+    console.log('🔵 ADD ETUDIANTS - Résultat:', result) // ✅ LOG
 
     return NextResponse.json(
       {
@@ -50,10 +51,13 @@ export async function POST(req: NextRequest) {
       }
     )
   } catch (e: any) {
+    console.error('❌ ADD ETUDIANTS ERROR:', e) // ✅ LOG
+    console.error('❌ Error message:', e.message) // ✅ LOG
+    console.error('❌ Error name:', e.name) // ✅ LOG
+    
     let status = 400
     let error = e.message
 
-    // 🔐 Erreurs d’authentification
     if (e.message === 'MISSING_TOKEN') {
       status = 401
       error = 'Token manquant'
@@ -69,7 +73,6 @@ export async function POST(req: NextRequest) {
       error = 'Accès refusé - Réservé au Directeur des Études'
     }
 
-    // 📚 Erreurs métier
     if (e.message === 'ESPACE_NOT_FOUND') {
       status = 404
       error = 'Espace pédagogique introuvable'
@@ -79,16 +82,21 @@ export async function POST(req: NextRequest) {
       status = 404
       error = 'Promotion introuvable'
     }
+    
+    // ✅ AJOUT pour la validation de promotion
+    if (e.message?.includes('PROMOTION_MISMATCH')) {
+      status = 400
+      error = e.message
+    }
 
     if (e.message === 'NO_STUDENTS_IN_PROMOTION') {
       status = 404
       error = 'Aucun étudiant dans cette promotion'
     }
 
-    // 🧾 Erreur Zod
     if (e.name === 'ZodError') {
       status = 400
-      error = JSON.stringify(e.errors)
+      error = `Validation échouée: ${JSON.stringify(e.errors)}`
     }
 
     return NextResponse.json(
@@ -100,6 +108,7 @@ export async function POST(req: NextRequest) {
     )
   }
 }
+
 export async function GET(
   req: Request,
   { params }: { params: { id: string } }

@@ -44,4 +44,8 @@ export class Assignation {
 
   @CreateDateColumn()
   createdAt!: Date
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dateAssignation: any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    evaluation: any
 }

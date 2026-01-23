@@ -14,7 +14,15 @@ export const travailRepository = {
   async findById(id: string) {
     const db = await getDataSource()
     const repo = db.getRepository(Travail)
-    return repo.findOne({ where: { id } })
+    return repo.findOne({
+       where: { id },
+       relations: ['espacePedagogique',
+        'espacePedagogique.etudiants',
+        'espacePedagogique.promotion',
+        'espacePedagogique.matiere',
+        
+        'formateur'],
+      })
   },
 
   async listByEspace(espaceId: string) {

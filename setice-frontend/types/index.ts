@@ -10,6 +10,13 @@ export interface User {
   role: "DIRECTEUR_ETUDES" | "FORMATEUR" | "ETUDIANT"
 }
 
+export enum Role {
+  DIRECTEUR_ETUDES = "DIRECTEUR_ETUDES",
+  FORMATEUR = "FORMATEUR",
+  ETUDIANT = "ETUDIANT",
+}
+
+
 export interface AuthResponse {
   success: boolean
   data?: {
@@ -35,6 +42,7 @@ export type Formateur = {
 
 
 export interface Promotion {
+  nbEtudiants: number
   id: string
   code: string
   libelle: string
@@ -57,6 +65,7 @@ export interface Etudiant {
 }
 
 export interface Matiere {
+  nom: string
   id: string
   code: string
   libelle: string
@@ -133,8 +142,13 @@ export interface AddEtudiantsResponse {
 
 export type TypeTravail = "INDIVIDUEL" | "COLLECTIF"
 export type StatutTravail = "BROUILLON" | "PUBLIE" | "CLOTURE"
-export type StatutAssignation = "ASSIGNE" | "LIVRE" | "EVALUE"
+export enum StatutAssignation {
+  ASSIGNE = 'ASSIGNE',
+  LIVRE = 'LIVRE',
+  EVALUE = 'EVALUE',
+}
 export interface Travail {
+  etudiants: Etudiant[]
   id: string
   titre: string
   consignes: string
@@ -234,8 +248,13 @@ export interface AssignationsListResponse {
     type: TypeTravail
     bareme: number
     dateLimite: string
+    total: number
+    
   }
   assignations: {
+    createdAt: string | number | Date
+    createdAt: string | number | Date
+    createdAt: string | number | Date
     id: string
     etudiant: Etudiant
     statut: StatutAssignation
@@ -276,4 +295,12 @@ export interface CreateEvaluationData {
   assignationId: string
   note: number
   commentaire?: string
+}
+
+export interface Livraison {
+  id: string
+  assignation: Assignation
+  fichierUrl?: string
+  texte?: string
+  dateLivraison: string
 }

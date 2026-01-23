@@ -8,6 +8,8 @@ import { EspacePedagogique } from '@/src/entities/EspacePedagogique'
 import { Assignation } from '../entities/Assignation'
 import { Travail } from '../entities/Travail'
 import { Evaluation } from '../entities/Evaluation'
+import { Livraison } from '../entities/Livraison'
+
 
 export const AppDataSource = new DataSource({
   type: 'postgres',
@@ -18,5 +20,5 @@ export const AppDataSource = new DataSource({
   database: 'setice_db',      // ou process.env.DB_NAME
   synchronize: true,
   logging: true,
-  entities: [User, Etudiant, Promotion, Formateur, Matiere, EspacePedagogique, Assignation, Travail, Evaluation],
+  entities: [User, Etudiant, Promotion, Formateur, Matiere, EspacePedagogique, Assignation, Travail, Evaluation, Livraison],
 })

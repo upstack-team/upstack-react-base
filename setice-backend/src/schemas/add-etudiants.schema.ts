@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 export const addEtudiantsSchema = z.object({
-  espacePedagogiqueId: z.string().uuid('ID espace pédagogique invalide'),
-  promotionId: z.string().uuid('ID promotion invalide')
+  espacePedagogiqueId: z.string().uuid('ID espace invalide'),
+  promotionId: z.string().uuid('ID promotion invalide'),
 })
 
-export type AddEtudiantsDto = z.infer<typeof addEtudiantsSchema>
+export type AddEtudiantsInput = z.infer<typeof addEtudiantsSchema>

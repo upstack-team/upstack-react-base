@@ -35,7 +35,7 @@ export class EspacePedagogique {
   )
   formateur!: Formateur
 
-  @ManyToMany(() => Etudiant)
+  @ManyToMany(() => Etudiant, { eager: false })
   @JoinTable({
     name: 'etudiants_espaces_pedagogiques',
     joinColumn: { name: 'espacePedagogiqueId', referencedColumnName: 'id' },

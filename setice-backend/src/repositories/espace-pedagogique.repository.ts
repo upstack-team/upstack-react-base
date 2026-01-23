@@ -61,7 +61,7 @@ export const espacePedagogiqueRepository = {
 
     const espace = await espaceRepo.findOne({
       where: { id: espaceId },
-      relations: ['etudiants'],
+      relations: ['etudiants', 'etudiants.user'],
     })
     if (!espace) throw new Error('ESPACE_NOT_FOUND')
 
